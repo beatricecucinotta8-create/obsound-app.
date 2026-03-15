@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Obsound Official - Music Experience</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --bg: #ffffff;
+            --black: #1a1a1a;
+            --accent: #fbc28b;
+            --secondary: #3cb9bc;
+            --brand-yellow: #ffde59;
+            --light-blue: #d1f2eb;
+            --pink: #ff85a1;
+            --shadow: 6px 6px 0px var(--black);
+            --card-bg: #ffffff;
+            --text-main: #1a1a1a;
+        }
+
+        body.dark-mode {
+            --bg: #121212;
+            --black: #ffffff;
+            --card-bg: #1e1e1e;
+            --text-main: #ffffff;
+            --light-blue: #2a4d44;
+        }
+
+        /* --- STILE NUVOLETTA (WELCOME TOAST) --- */
+        #welcome-toast {
+            position: fixed;
+            top: -100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--brand-yellow);
+            border: 3px solid var(--black);
+            padding: 12px 25px;
+            border-radius: 20px;
+            box-shadow: 5px 5px 0px var(--black);
+            z-index: 2000;
+            font-weight: 900;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: top 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            pointer-events: none;
+        }
+        #welcome-toast.show { top: 20px; }
+
+        /* Citazione del Giorno Style */
+        .daily-quote-container {
+            background: var(--light-blue);
+            border: 3px solid var(--black);
+            border-radius: 20px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 4px 4px 0px var(--black);
+            position: relative;
+            overflow: hidden;
+        }
+        .daily-quote-container i {
+            position: absolute;
+            right: 15px;
+            bottom: 10px;
+            opacity: 0.2;
+            font-size: 30px;
+        }
+        #quote-text {
+            font-weight: 800;
+            font-size: 14px;
+            line-height: 1.4;
+            color: var(--text-main);
+            font-style: italic;
+        }
+        #quote-author {
+            display: block;
+            margin-top: 8px;
+            font-size: 11px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Badge Utente */
+        .user-badge {
+            background: var(--brand-yellow);
+            color: #1a1a1a;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 6px;
+            border: 2px solid var(--black);
+            margin-left: 8px;
+            vertical-align: middle;
+            font-weight: 900;
+            text-transform: uppercase;
+            display: inline-block;
+            line-height: 1;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Outfit', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: #e0e0e0;
+            display: flex;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+            transition: background 0.3s ease;
+        }
+
+        .app-shell {
+            width: 100%;
+            max-width: 450px;
+            height: 100%;
+            background: var(--bg);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            border-left: 4px solid var(--black);
+            border-right: 4px solid var(--black);
+            overflow: hidden;
+            color: var(--text-main);
+        }
+
+        #settings-panel {
+            position: absolute;
+            inset: 0;
+            background: var(--bg);
+            z-index: 1100;
+            transform: translateX(-100%);
+            transition: transform 0.4s cubic-bezier(0.19, 1, 0.22, 1);
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+        #settings-panel.open { transform: translateX(0); }
+
+        .settings-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .setting-item {
+            border: 3px solid var(--black);
+            padding: 18px;
+            border-radius: 20px;
+            margin-bottom: 20px;
+            background: var(--card-bg);
+            box-shadow: 5px 5px 0px var(--black);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 800;
+        }
+
+        .setting-select {
+            border: 2px solid var(--black);
+            padding: 5px 10px;
+            border-radius: 10px;
+            font-weight: 800;
+            outline: none;
+            background: var(--bg);
+            color: var(--text-main);
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 45px;
+            height: 24px;
+        }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute; cursor: pointer; inset: 0;
+            background-color: #ccc; border: 2px solid var(--black);
+            transition: .4s; border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute; content: ""; height: 14px; width: 14px;
+            left: 3px; bottom: 3px; background-color: var(--black);
+            transition: .4s; border-radius: 50%;
+        }
+        input:checked + .slider { background-color: var(--secondary); }
+        input:checked + .slider:before { transform: translateX(21px); }
+
+        #login-screen {
+            position: absolute;
+            inset: 0;
+            background: var(--brand-yellow);
+            z-index: 1200;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 30px;
+            transition: all 0.7s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+        }
+
+        .login-hidden { transform: translateY(-100%); opacity: 0; pointer-events: none; }
+
+        .login-card {
+            background: white;
+            border: 4px solid #1a1a1a;
+            padding: 30px;
+            border-radius: 25px;
+            box-shadow: 10px 10px 0px #1a1a1a;
+            text-align: center;
+            color: #1a1a1a;
+        }
+
+        .login-card h1 { font-size: 38px; font-weight: 900; margin-bottom: 5px; }
+        .login-card p { margin-bottom: 25px; font-weight: 700; color: #555; }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 15px;
+            margin-bottom: 15px;
+            border: 3px solid var(--black);
+            border-radius: 12px;
+            font-weight: 700;
+            outline: none;
+            font-size: 16px;
+            background: var(--card-bg);
+            color: var(--text-main);
+        }
+
+        .btn-enter {
+            width: 100%;
+            padding: 18px;
+            background: var(--black);
+            color: var(--bg);
+            border: none;
+            border-radius: 12px;
+            font-weight: 900;
+            font-size: 18px;
+            cursor: pointer;
+            box-shadow: 4px 4px 0px #666;
+            transition: 0.2s;
+        }
+
+        .main-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            gap: 10px;
+        }
+
+        .header-btn {
+            width: 50px; height: 50px;
+            border: 3px solid var(--black);
+            border-radius: 15px;
+            background: var(--light-blue);
+            display: flex; justify-content: center; align-items: center;
+            box-shadow: 4px 4px 0px var(--black);
+            cursor: pointer;
+            position: relative;
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #ff4757;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            border: 2px solid var(--black);
+            display: block;
+        }
+
+        .brand-logo { font-weight: 900; font-size: 18px; text-transform: uppercase; flex: 1; text-align: center; }
+
+        .search-container {
+            display: flex; border: 3px solid var(--black);
+            border-radius: 18px; box-shadow: 0px 5px 0px var(--black);
+            margin-bottom: 25px; background: var(--card-bg);
+        }
+
+        .search-container span { padding: 15px; border-right: 3px solid var(--black); background: rgba(0,0,0,0.05); }
+        .search-container input { border: none; padding: 10px 15px; width: 100%; font-weight: 700; outline: none; margin-bottom: 0; }
+
+        .tabs { display: flex; justify-content: space-between; border-bottom: 2px solid rgba(0,0,0,0.1); margin-bottom: 25px; }
+        .tab-link { padding-bottom: 10px; font-weight: 800; color: #888; cursor: pointer; position: relative; }
+        .tab-link.active { color: var(--text-main); }
+        .tab-link.active::after { content: ''; position: absolute; bottom: -2px; left: 0; width: 100%; height: 5px; background: var(--accent); }
+
+        .section-view { display: none; }
+        .section-view.active { display: block; animation: fadeIn 0.4s ease; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .cards-grid { display: flex; gap: 15px; margin-bottom: 30px; flex-wrap: wrap; }
+        .music-card { flex: 1; min-width: 140px; background: var(--card-bg); border: 3px solid var(--black); border-radius: 20px; padding: 12px; box-shadow: 5px 5px 0px var(--black); position: relative; cursor: pointer; transition: 0.2s; }
+        .music-card:active { transform: scale(0.95); }
+        .card-img { width: 100%; aspect-ratio: 1; border: 2px solid var(--black); border-radius: 15px; margin-bottom: 10px; display: flex; justify-content: center; align-items: center; font-size: 35px; }
+
+        .song-item {
+            border: 3px solid var(--black);
+            border-radius: 20px;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 4px 4px 0px var(--black);
+            margin-bottom: 15px;
+            background: var(--card-bg);
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .mini-player {
+            border: 3px solid var(--black);
+            border-radius: 20px;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 6px 6px 0px var(--black);
+            margin-top: auto;
+            margin-bottom: 15px;
+            background: var(--card-bg);
+            cursor: pointer;
+        }
+
+        .player-thumb { width: 50px; height: 50px; background: #254252; border: 2px solid var(--black); border-radius: 12px; display: flex; justify-content: center; align-items: center; color: var(--accent); font-size: 20px; }
+        
+        #full-player {
+            position: absolute;
+            inset: 0;
+            background: var(--bg);
+            z-index: 900;
+            display: flex;
+            flex-direction: column;
+            padding: 40px 30px;
+            transform: translateY(100%);
+            transition: transform 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+        }
+        #full-player.active { transform: translateY(0); }
+
+        .full-player-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .big-art { 
+            width: 100%; 
+            aspect-ratio: 1; 
+            border: 4px solid var(--black); 
+            border-radius: 30px; 
+            box-shadow: 10px 10px 0px var(--black);
+            display: flex; justify-content: center; align-items: center;
+            font-size: 100px;
+            background: var(--brand-yellow);
+            margin-bottom: 40px;
+        }
+
+        .progress-area { width: 100%; margin: 30px 0; }
+        .progress-bar { 
+            width: 100%; 
+            height: 12px; 
+            background: rgba(0,0,0,0.1); 
+            border: 3px solid var(--black); 
+            border-radius: 15px; 
+            position: relative;
+            cursor: pointer;
+            overflow: hidden;
+        }
+        .progress-fill { width: 0%; height: 100%; background: var(--secondary); transition: width 0.1s linear; }
+        .time-labels { display: flex; justify-content: space-between; font-weight: 800; font-size: 14px; margin-top: 8px; }
+
+        .full-controls { display: flex; justify-content: center; align-items: center; gap: 40px; }
+        .nav-bar { background: var(--secondary); border-top: 4px solid var(--black); padding: 15px; display: flex; justify-content: space-around; align-items: center; }
+        .nav-item { font-size: 24px; color: white; padding: 10px; border-radius: 12px; cursor: pointer; transition: 0.1s; }
+        .nav-item:active { transform: scale(0.9); }
+        .nav-item.active { background: var(--accent); color: var(--black); border: 2px solid var(--black); box-shadow: 3px 3px 0px var(--black); }
+        
+        .artist-no-img {
+            width: 50px; height: 50px; 
+            border-radius: 50%; 
+            border: 3px solid var(--black); 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            font-size: 20px;
+        }
+
+        /* Sezione Profilo */
+        #profile-section { display: none; }
+        .profile-card {
+            border: 4px solid var(--black); border-radius: 25px; padding: 25px;
+            background: var(--light-blue); box-shadow: 8px 8px 0px var(--black);
+            text-align: center; margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="welcome-toast">
+        <span style="font-size: 20px;">👋</span>
+        <span id="toast-message">Messaggio</span>
+    </div>
+
+    <audio id="main-audio"></audio>
+
+    <div class="app-shell">
+        <div id="settings-panel">
+            <div class="settings-header">
+                <h2 style="font-weight: 900;">SETTINGS</h2>
+                <div class="header-btn" onclick="toggleSettings(); playClick();" style="background: var(--pink);">
+                    <i class="fa-solid fa-xmark"></i>
+                </div>
+            </div>
+
+            <div class="setting-item" onclick="toggleDarkMode(); playClick();" style="cursor:pointer">
+                <span>TEMA SCURO</span>
+                <i class="fa-solid fa-moon"></i>
+            </div>
+
+            <div class="setting-item" onclick="checkAppUpdate(); playClick();" style="cursor:pointer">
+                <div style="display: flex; flex-direction: column;">
+                    <span id="update-text">CONTROLLA AGGIORNAMENTI</span>
+                    <small id="version-label" style="font-size: 10px; opacity: 0.6; margin-top: 5px;">Versione 6.0</small>
+                </div>
+                <i id="update-icon" class="fa-solid fa-rotate"></i>
+            </div>
+
+            <h3 style="font-weight: 900; margin: 10px 0 15px; font-size: 14px; opacity: 0.8;">PERSONALIZZAZIONE AUDIO</h3>
+
+            <div class="setting-item">
+                <span>EQUALIZZATORE</span>
+                <select class="setting-select" onchange="setEqualizer(this.value); playClick();">
+                    <option value="none">Normale</option>
+                    <option value="bass">Bass Boost</option>
+                    <option value="pop">Pop</option>
+                    <option value="rock">Rock</option>
+                    <option value="jazz">Jazz</option>
+                </select>
+            </div>
+
+            <div class="setting-item">
+                <span>AUDIO SPAZIALE BETA / 8D</span>
+                <label class="switch">
+                    <input type="checkbox" onchange="toggle8D(this.checked); playClick();">
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="setting-item">
+                <span>QUALITÀ STREAMING</span>
+                <select class="setting-select" onchange="setQuality(this.value); playClick();">
+                    <option value="low">Bassa</option>
+                    <option value="standard" selected>Standard</option>
+                    <option value="hifi">Alta Fedeltà (Hi-Fi)</option>
+                </select>
+            </div>
+
+            <h3 style="font-weight: 900; margin: 10px 0 15px; font-size: 14px; opacity: 0.8;">FEEDBACK SONORO</h3>
+
+            <div class="setting-item">
+                <span>EFFETTO CLICK</span>
+                <select class="setting-select" id="click-sound-select" onchange="setClickSound(this.value); playClick();">
+                    <option value="classic">Classico</option>
+                    <option value="deep">Basso Profondo</option>
+                    <option value="tech">Tecno / Square</option>
+                    <option value="pop">Pop / Acuto</option>
+                </select>
+            </div>
+
+            <div style="margin-top: auto; border: 3px solid var(--black); padding: 20px; border-radius: 20px; background: var(--brand-yellow);">
+                <p style="font-weight: 900; font-size: 14px;">OBSOUND OFFICIAL</p>
+                <p style="font-size: 12px; font-weight: 700;">Designed for high-end audio experience.</p>
+            </div>
+        </div>
+
+        <div id="login-screen">
+            <div class="login-card">
+                <div style="font-size: 50px;">🎧</div>
+                <h1>Obsound</h1>
+                <p>Official Experience</p>
+                <input type="text" id="username" placeholder="Inserisci il tuo nome...">
+                <button class="btn-enter" onclick="login(); playClick();">ENTRA NELL'APP</button>
+            </div>
+        </div>
+
+        <div id="full-player">
+            <div class="full-player-header">
+                <i class="fa-solid fa-chevron-down" style="font-size: 25px; cursor: pointer;" onclick="closeFullPlayer(); playClick();"></i>
+                <div style="font-weight: 900;">IN RIPRODUZIONE</div>
+                <i class="fa-solid fa-ellipsis-vertical" style="font-size: 25px;" onclick="playClick()"></i>
+            </div>
+            <div class="big-art" id="full-big-art">🎵</div>
+            <h1 id="full-p-title" style="font-size: 22px; font-weight: 900;">Titolo Brano</h1>
+            <p id="full-p-artist" style="font-size: 16px; font-weight: 700; opacity: 0.6; margin-bottom: 20px;">Artista</p>
+            <div class="progress-area">
+                <div class="progress-bar" onclick="seek(event); playClick();">
+                    <div class="progress-fill" id="progress-fill"></div>
+                </div>
+                <div class="time-labels"><span id="current-time">0:00</span><span id="total-duration">0:00</span></div>
+            </div>
+            <div class="full-controls">
+                <i class="fa-solid fa-backward-step" style="font-size: 30px;" onclick="playClick()"></i>
+                <div style="width: 80px; height: 80px; background: var(--black); color: white; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 30px; cursor: pointer;" onclick="togglePlay(); playClick();">
+                    <i class="fa-solid fa-play" id="full-play-icon"></i>
+                </div>
+                <i class="fa-solid fa-forward-step" style="font-size: 30px;" onclick="playClick()"></i>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <header>
+                <div class="header-btn" onclick="toggleSettings(); playClick();"><i class="fa-solid fa-bars-staggered"></i></div>
+                <div class="brand-logo">Obsound Official</div>
+                <div class="header-btn" onclick="showNews(); playClick();" style="background: var(--accent);">
+                    <i class="fa-solid fa-bell"></i>
+                    <span class="notification-badge" id="news-badge"></span>
+                </div>
+            </header>
+
+            <div id="home-section">
+                <h1 id="welcome-text">Listening Everyday</h1>
+                <p style="opacity: 0.7; font-weight: 600; margin-bottom: 20px;">Sperimenta la musica con Obsound.</p>
+
+                <div class="daily-quote-container">
+                    <span id="quote-text">"La musica è il linguaggio universale dell'anima."</span>
+                    <span id="quote-author">Obsound Inspiration</span>
+                    <i class="fa-solid fa-quote-right"></i>
+                </div>
+
+                <div class="search-container">
+                    <span><i class="fa-solid fa-magnifying-glass"></i></span>
+                    <input type="text" id="search-input" placeholder="Cerca artisti, brani..." oninput="instantSearch()">
+                </div>
+
+                <div class="tabs">
+                    <div class="tab-link active" onclick="showTab('overview', this); playClick();">Overview</div>
+                    <div class="tab-link" onclick="showTab('songs', this); playClick();">Songs</div>
+                    <div class="tab-link" onclick="showTab('albums', this); playClick();">Albums</div>
+                    <div class="tab-link" onclick="showTab('artists', this); playClick();">Artists</div>
+                </div>
+
+                <div id="overview" class="section-view active">
+                    <div class="cards-grid">
+                        <div class="music-card searchable" style="transform: rotate(-2deg);" onclick="playInternal('Un piano alla Volta', 'OB SOUND OFFICIAL', '🍋', 'https://files.catbox.moe/fi9z8v.mp3'); playClick();">
+                            <div class="card-img" style="background: var(--light-blue);">🍋</div>
+                            <h4>OB SOUND</h4>
+                            <p style="font-size: 12px; opacity: 0.6;">Piano Solo</p>
+                        </div>
+                        <div class="music-card searchable" style="transform: rotate(2deg);" onclick="playClick()">
+                            <div class="card-img" style="background: #ffe4d1;">✨</div>
+                            <h4>OB.LOVE</h4>
+                            <p style="font-size: 12px; opacity: 0.6;">Coming Soon</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="songs" class="section-view">
+                    <h3 style="margin-bottom: 15px; font-size: 16px;">PLAYLIST PERSONALE</h3>
+                    <div class="song-item searchable" onclick="playInternal('Un piano alla Volta', 'prod. OB SOUND OFFICIAL', '🍋', 'https://files.catbox.moe/fi9z8v.mp3'); playClick();">
+                        <div class="player-thumb" style="background: #e1ffb1; color: black;"><i class="fa-solid fa-play"></i></div>
+                        <div style="flex:1">
+                            <h4 style="font-size: 15px;">Un piano alla Volta</h4>
+                            <p style="font-size: 13px; opacity: 0.6;">prod. OB SOUND OFFICIAL</p>
+                        </div>
+                        <i class="fa-solid fa-volume-high"></i>
+                    </div>
+                </div>
+
+                <div id="albums" class="section-view">
+                    <h3 style="margin-bottom: 15px; font-size: 16px;">I TUOI ALBUM</h3>
+                    <div class="cards-grid">
+                        <div class="music-card searchable">
+                            <div class="card-img" style="background: #ffccbc;">💿</div>
+                            <h4>In Lavorazione...</h4>
+                            <p style="font-size: 12px; opacity: 0.6;">0 Brani-2026</p>
+                        </div>
+                        <div class="music-card searchable">
+                            <div class="card-img" style="background: #c5cae9;">🎹</div>
+                            <h4>Realta Alternata</h4>
+                            <p style="font-size: 12px; opacity: 0.6;">0 Brani-2025</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="artists" class="section-view">
+                    <h3 style="margin-bottom: 15px; font-size: 16px;">ARTISTI SEGUITI</h3>
+                    <div class="song-item searchable">
+                        <div class="artist-no-img" style="background: var(--brand-yellow);">🎧</div>
+                        <div style="flex:1">
+                            <h4 style="font-size: 15px;">OB SOUND OFFICIAL</h4>
+                            <p style="font-size: 13px; opacity: 0.6;">Artista Verificato</p>
+                        </div>
+                        <i class="fa-solid fa-circle-check" style="color: #3cb9bc;"></i>
+                    </div>
+                    <div class="song-item searchable">
+                        <div class="artist-no-img" style="background: var(--pink);">🎵</div>
+                        <div style="flex:1">
+                            <h4 style="font-size: 15px;">OB.love.music</h4>
+                            <p style="font-size: 13px; opacity: 0.6;">Artista Verificato</p>
+                        </div>
+                        <i class="fa-solid fa-star" style="color: var(--accent);"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div id="profile-section">
+                <h2 style="font-weight: 900;">IL TUO PROFILO</h2>
+                <div class="profile-card">
+                    <div class="artist-no-img" style="margin: 0 auto 15px; width: 70px; height: 70px; background: var(--brand-yellow); font-size: 30px;">👤</div>
+                    <h2 id="profile-name" style="font-weight: 900; display: flex; align-items: center; justify-content: center;">Utente</h2>
+                    <p style="font-weight: 700; opacity: 0.6; margin-bottom: 20px;">Account Obsound Official</p>
+                    <button class="btn-enter" onclick="logout()" style="background: var(--pink); color: black;">LOGOUT</button>
+                </div>
+            </div>
+
+            <div class="mini-player" id="global-player" onclick="openFullPlayer(); playClick();">
+                <div class="player-thumb" id="p-thumb"><i class="fa-solid fa-compact-disc"></i></div>
+                <div style="flex: 1;"><h4 id="p-title" style="font-size: 15px;">Obsound Play</h4><p id="p-artist" style="font-size: 13px; opacity: 0.6;">Scegli un brano</p></div>
+                <div onclick="event.stopPropagation(); togglePlay(); playClick();" style="font-size: 20px; width: 40px; text-align: center; cursor: pointer;"><i class="fa-solid fa-play" id="play-status-icon"></i></div>
+            </div>
+        </div>
+
+        <nav class="nav-bar">
+            <div class="nav-item active" onclick="switchMainView('home', this); playClick();"><i class="fa-solid fa-house"></i></div>
+            <div class="nav-item" onclick="playClick();"><i class="fa-solid fa-heart"></i></div>
+            <div class="nav-item" onclick="playClick();"><i class="fa-solid fa-fire"></i></div>
+            <div class="nav-item" onclick="switchMainView('profile', this); playClick();"><i class="fa-solid fa-user"></i></div>
+        </nav>
+    </div>
+
+    <script>
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        let currentClickStyle = 'classic';
+
+        function playClick() {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            
+            if (currentClickStyle === 'classic') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.1);
+            } else if (currentClickStyle === 'deep') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(200, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.15);
+            } else if (currentClickStyle === 'tech') {
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(1200, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.05);
+            } else if (currentClickStyle === 'pop') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(1500, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(400, audioCtx.currentTime + 0.08);
+            }
+
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.1);
+        }
+
+        function setClickSound(val) {
+            currentClickStyle = val;
+            localStorage.setItem('obsound_click_style', val);
+        }
+
+        function setEqualizer(val) { console.log("EQ impostato su: " + val); }
+        function toggle8D(enabled) { console.log("Audio 8D: " + (enabled ? "ATTIVO" : "DISATTIVO")); }
+        function setQuality(val) { console.log("Qualità impostata su: " + val); }
+
+        function showWelcomeToast(name) {
+            const toast = document.getElementById('welcome-toast');
+            const msg = document.getElementById('toast-message');
+            const lastChar = name.trim().toLowerCase().slice(-1);
+            const greeting = (lastChar === 'a' || lastChar === 'e') ? "Bentornata" : "Bentornato";
+            msg.innerText = `${greeting} nell'app, ${name}!`;
+            toast.classList.add('show');
+            setTimeout(() => { toast.classList.remove('show'); }, 3500);
+        }
+
+        const quotes = [
+            { text: "La musica può cambiare il mondo perché può cambiare le persone.", author: "Bono" },
+            { text: "Dove le parole finiscono, inizia la musica.", author: "Heine" },
+            { text: "Senza musica, la vita sarebbe un errore.", author: "Nietzsche" }
+        ];
+
+        function setDailyQuote() {
+            const dayOfYear = Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24));
+            const quoteIndex = dayOfYear % quotes.length;
+            document.getElementById('quote-text').innerText = `"${quotes[quoteIndex].text}"`;
+            document.getElementById('quote-author').innerText = quotes[quoteIndex].author;
+        }
+
+        window.onload = function() {
+            setDailyQuote();
+            const savedClick = localStorage.getItem('obsound_click_style');
+            if (savedClick) {
+                currentClickStyle = savedClick;
+                if(document.getElementById('click-sound-select')) document.getElementById('click-sound-select').value = savedClick;
+            }
+            const savedName = localStorage.getItem('obsound_username');
+            if (savedName) {
+                applicaNome(savedName);
+                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('login-screen').classList.add('login-hidden');
+                setTimeout(() => showWelcomeToast(savedName), 1000);
+            }
+        };
+
+        function login() {
+            const name = document.getElementById('username').value;
+            if(name === "") return alert("Metti un nome!");
+            localStorage.setItem('obsound_username', name);
+            applicaNome(name);
+            document.getElementById('login-screen').classList.add('login-hidden');
+            setTimeout(() => showWelcomeToast(name), 800);
+        }
+
+        function applicaNome(name) {
+            const badgeHtml = `<span class="user-badge">PRO</span>`;
+            document.getElementById('welcome-text').innerHTML = "Ciao, " + name + "!" + badgeHtml;
+            document.getElementById('profile-name').innerHTML = name + badgeHtml;
+        }
+
+        function logout() {
+            if(confirm("Vuoi davvero uscire?")) {
+                localStorage.removeItem('obsound_username');
+                location.reload();
+            }
+        }
+
+        function instantSearch() {
+            const query = document.getElementById('search-input').value.toLowerCase();
+            const items = document.querySelectorAll('.searchable');
+            items.forEach(item => {
+                const text = item.innerText.toLowerCase();
+                item.style.display = text.includes(query) ? "" : "none";
+            });
+        }
+
+        function showNews() {
+            document.getElementById('news-badge').style.display = 'none';
+            alert("Novità in Impostazioni! 🎧 Abbiamo aggiunto la Personalizzazione Audio!");
+        }
+
+        const audio = document.getElementById('main-audio');
+        const playBtn = document.getElementById('play-status-icon');
+        const fullPlayBtn = document.getElementById('full-play-icon');
+        const playerThumb = document.getElementById('p-thumb');
+        const progressFill = document.getElementById('progress-fill');
+        const fullPlayer = document.getElementById('full-player');
+        const settingsPanel = document.getElementById('settings-panel');
+
+        function toggleSettings() { settingsPanel.classList.toggle('open'); }
+        function toggleDarkMode() { document.body.classList.toggle('dark-mode'); }
+
+        function showTab(tabId, el) {
+            document.querySelectorAll('.section-view').forEach(v => v.classList.remove('active'));
+            document.querySelectorAll('.tab-link').forEach(t => t.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            el.classList.add('active');
+        }
+
+        function switchMainView(view, el) {
+            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+            el.classList.add('active');
+            if(view === 'home') {
+                document.getElementById('home-section').style.display = 'block';
+                document.getElementById('profile-section').style.display = 'none';
+            } else {
+                document.getElementById('home-section').style.display = 'none';
+                document.getElementById('profile-section').style.display = 'block';
+            }
+        }
+
+        function openFullPlayer() { fullPlayer.classList.add('active'); }
+        function closeFullPlayer() { fullPlayer.classList.remove('active'); }
+
+        function playInternal(title, artist, emoji, link) {
+            document.getElementById('p-title').innerText = title;
+            document.getElementById('p-artist').innerText = artist;
+            playerThumb.innerHTML = emoji;
+            document.getElementById('full-p-title').innerText = title;
+            document.getElementById('full-p-artist').innerText = artist;
+            document.getElementById('full-big-art').innerHTML = emoji;
+            audio.src = link; audio.play();
+            updatePlayIcons(true);
+        }
+
+        function togglePlay() {
+            if (!audio.src) return;
+            if (audio.paused) { audio.play(); updatePlayIcons(true); } 
+            else { audio.pause(); updatePlayIcons(false); }
+        }
+
+        function updatePlayIcons(isPlaying) {
+            const icon = isPlaying ? "fa-solid fa-pause" : "fa-solid fa-play";
+            if(playBtn) playBtn.className = icon; 
+            if(fullPlayBtn) fullPlayBtn.className = icon;
+        }
+
+        audio.ontimeupdate = () => {
+            if (!audio.duration) return;
+            const pct = (audio.currentTime / audio.duration) * 100;
+            progressFill.style.width = pct + "%";
+            document.getElementById('current-time').innerText = formatTime(audio.currentTime);
+            document.getElementById('total-duration').innerText = formatTime(audio.duration);
+        };
+
+        function seek(event) {
+            if (!audio.duration) return;
+            audio.currentTime = (event.offsetX / event.currentTarget.offsetWidth) * audio.duration;
+        }
+
+        function formatTime(t) {
+            if (isNaN(t)) return "0:00";
+            const m = Math.floor(t / 60), s = Math.floor(t % 60);
+            return m + ":" + (s < 10 ? "0" + s : s);
+        }
+
+        function checkAppUpdate() { alert("App Già Aggiornata!!"); }
+    </script>
+</body>
+</html>
